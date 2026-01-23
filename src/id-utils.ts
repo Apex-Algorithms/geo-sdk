@@ -1,0 +1,121 @@
+/**
+ * This module provides utility functions for working knowledge graph
+ * identifiers in TypeScript.
+ */
+
+import { type Id as GrcId, parseId } from '@geoprotocol/grc-20';
+import { Brand } from 'effect';
+import { parse as uuidParse, stringify as uuidStringify, v4 as uuidv4 } from 'uuid';
+import { Id, isValid } from './id.js';
+import { normalizeUuidForParse } from './internal/uuid.js';
+
+export { isValid };
+export type { GrcId };
+export type IdBase64 = string & Brand.Brand<'IdBase64'>;
+
+export const IdBase64 = Brand.refined<IdBase64>(
+  id => isValidBase64(id),
+  id => Brand.error(`Expected ${id} to be a valid IdBase64`),
+);
+
+/**
+ * Generates a globally unique knowledge graph identifier.
+ *
+ * @example
+ * ```
+ * import { Id } from '@geoprotocol/geo-sdk'
+ *
+ * const id = Id.generate();
+ * console.log(id)
+ * ```
+ *
+ * @returns dashless v4 UUID (32 hex characters without dashes)
+ */
+export function generate(): Id {
+  const uuid = uuidv4().replaceAll('-', '');
+  return Id(uuid);
+}
+
+export function isValidBase64(id: string): boolean {
+  try {
+    // @ts-expect-error
+    const uuid = fromBase64(id);
+    return isValid(uuid);
+  } catch (_error) {
+    return false;
+  }
+}
+
+export function assertValid(id: string, sourceHint?: string) {
+  if (!isValid(id)) {
+    throw new Error(`Invalid id: "${id}"${sourceHint ? ` for ${sourceHint}` : ''}`);
+  }
+}
+
+export function toBytes(id: Id | string): Uint8Array {
+  return uuidParse(normalizeUuidForParse(id));
+}
+
+export function fromBytes(bytes: Uint8Array): Id {
+  return Id(uuidStringify(bytes).replaceAll('-', ''));
+}
+
+/**
+ * Converts a local string Id to a GRC-20 Id (Uint8Array).
+ */
+export function toGrcId(id: Id | string): GrcId {
+  // Try to parse as a UUID string first
+  const parsed = parseId(id);
+  if (parsed) {
+    return parsed;
+  }
+  // Fallback: use the toBytes helper
+  return toBytes(id as Id) as GrcId;
+}
+
+const base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+export function toBase64(id: Id): IdBase64 {
+  const bytes = toBytes(id);
+  let result = '';
+  let i: number;
+
+  for (i = 0; i < bytes.length; i += 3) {
+    const a = bytes[i];
+    const b = bytes[i + 1] ?? 0;
+    const c = bytes[i + 2] ?? 0;
+
+    // @ts-expect-error
+    const triple = (a << 16) | (b << 8) | c;
+
+    result += base64Chars[(triple >> 18) & 0x3f];
+    result += base64Chars[(triple >> 12) & 0x3f];
+    result += i + 1 < bytes.length ? base64Chars[(triple >> 6) & 0x3f] : '=';
+    result += i + 2 < bytes.length ? base64Chars[triple & 0x3f] : '=';
+  }
+
+  return IdBase64(result);
+}
+
+export function fromBase64(id: IdBase64): Id {
+  const bytes = [];
+
+  for (let i = 0; i < id.length; i += 4) {
+    // @ts-expect-error
+    const c1 = base64Chars.indexOf(id[i]);
+    // @ts-expect-error
+    const c2 = base64Chars.indexOf(id[i + 1]);
+    // @ts-expect-error
+    const c3 = base64Chars.indexOf(id[i + 2]);
+    // @ts-expect-error
+    const c4 = base64Chars.indexOf(id[i + 3]);
+
+    const triple = (c1 << 18) | (c2 << 12) | ((c3 & 63) << 6) | (c4 & 63);
+
+    bytes.push((triple >> 16) & 0xff);
+    if (c3 !== -1 && c3 !== 64) bytes.push((triple >> 8) & 0xff);
+    if (c4 !== -1 && c4 !== 64) bytes.push(triple & 0xff);
+  }
+
+  return fromBytes(new Uint8Array(bytes));
+}
