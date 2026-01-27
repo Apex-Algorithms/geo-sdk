@@ -1,5 +1,11 @@
 # @geoprotocol/geo-sdk
 
+## 0.2.1
+
+### Patch Changes
+
+- 4be9218: upgrade grc-20 with a validation improvement
+
 ## 0.2.0
 
 ### Minor Changes
