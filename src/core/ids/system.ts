@@ -244,7 +244,9 @@ export const MISSION_PROPERTY = Id('e4ed96e692cf42c4967bab2cef56f889');
 export const PLACEHOLDER_IMAGE = Id('6c49012e21fd4b35b97660210ea0ae0f');
 export const PLACEHOLDER_TEXT = Id('503e9e78866942439777af8fb75cdc56');
 export const TAB_TYPE = Id('306a88ec196043288cdb77c23de2785a');
+/** @deprecated Use ROLE_TYPE instead */
 export const ROLE_PROPERTY = Id('e4e366e9d5554b6892bf7358e824afd2');
+export const ROLE_TYPE = Id('e4e366e9d5554b6892bf7358e824afd2');
 
 // Do we still need these?
 export const DEFAULT_TYPE = Id('36ea572308514012945e90d05f0e54e9');
