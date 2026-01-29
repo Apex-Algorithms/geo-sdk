@@ -3,7 +3,9 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { it } from 'vitest';
 
 import { SpaceRegistryAbi } from './abis/index.js';
+import { DESCRIPTION_PROPERTY } from './core/ids/system.js';
 import { createEntity } from './graph/create-entity.js';
+import { updateEntity } from './graph/update-entity.js';
 import * as personalSpace from './personal-space/index.js';
 import { getWalletClient } from './smart-wallet.js';
 
@@ -116,11 +118,19 @@ it.skip('should create a space and publish an edit', async () => {
 
   console.log('entityId', entityId);
 
+  // Unset description
+  const { ops: unsetDescriptionOps } = updateEntity({
+    id: entityId,
+    unset: [{ property: DESCRIPTION_PROPERTY }],
+  });
+
+  const allOps = [...ops, ...unsetDescriptionOps];
+
   // Publish the edit to IPFS and get calldata for on-chain submission
   const { cid, editId, to, calldata } = await personalSpace.publishEdit({
     name: 'Test Edit',
     spaceId,
-    ops,
+    ops: allOps,
     author: account.address,
     network: 'TESTNET',
   });
