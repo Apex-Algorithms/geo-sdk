@@ -7,7 +7,7 @@ import {
 } from '@geoprotocol/grc-20';
 import { DESCRIPTION_PROPERTY, NAME_PROPERTY } from '../core/ids/system.js';
 import { Id } from '../id.js';
-import { assertValid, toGrcId } from '../id-utils.js';
+import { assertValid, toGrcId, toInt64 } from '../id-utils.js';
 import type { CreateResult, UnsetLanguageParam, UpdateEntityParams } from '../types.js';
 
 /**
@@ -62,6 +62,12 @@ export const updateEntity = ({ id, name, description, values, unset }: UpdateEnt
       assertValid(valueEntry.language, '`language` in `values` in `updateEntity`');
     }
     if (valueEntry.type === 'float64' && valueEntry.unit) {
+      assertValid(valueEntry.unit, '`unit` in `values` in `updateEntity`');
+    }
+    if (valueEntry.type === 'int64' && valueEntry.unit) {
+      assertValid(valueEntry.unit, '`unit` in `values` in `updateEntity`');
+    }
+    if (valueEntry.type === 'decimal' && valueEntry.unit) {
       assertValid(valueEntry.unit, '`unit` in `values` in `updateEntity`');
     }
   }
@@ -163,6 +169,43 @@ export const updateEntity = ({ id, name, description, values, unset }: UpdateEnt
         value: {
           type: 'schedule',
           value: valueEntry.value,
+        },
+      });
+    } else if (valueEntry.type === 'int64') {
+      newValues.push({
+        property,
+        value: {
+          type: 'int64',
+          value: toInt64(valueEntry.value, '`int64` value in `updateEntity`'),
+          ...(valueEntry.unit ? { unit: toGrcId(valueEntry.unit) } : {}),
+        },
+      });
+    } else if (valueEntry.type === 'decimal') {
+      newValues.push({
+        property,
+        value: {
+          type: 'decimal',
+          exponent: valueEntry.exponent,
+          mantissa: valueEntry.mantissa,
+          ...(valueEntry.unit ? { unit: toGrcId(valueEntry.unit) } : {}),
+        },
+      });
+    } else if (valueEntry.type === 'bytes') {
+      newValues.push({
+        property,
+        value: {
+          type: 'bytes',
+          value: valueEntry.value,
+        },
+      });
+    } else if (valueEntry.type === 'embedding') {
+      newValues.push({
+        property,
+        value: {
+          type: 'embedding',
+          subType: valueEntry.subType,
+          dims: valueEntry.dims,
+          data: valueEntry.data,
         },
       });
     } else {
