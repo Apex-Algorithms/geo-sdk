@@ -1,4 +1,4 @@
-import { encodeFunctionData, stringToHex, toHex } from 'viem';
+import { encodeAbiParameters, encodeFunctionData, toHex } from 'viem';
 import { TESTNET } from '../../contracts.js';
 import { SpaceRegistryAbi } from '../abis/index.js';
 import { isValid } from '../id.js';
@@ -66,10 +66,14 @@ export async function publishEdit(params: PublishEditParams): Promise<PublishEdi
     network,
   });
 
+  // Encode the IPFS URI as ABI-encoded string (offset + length + data)
+  // The indexer expects this format to extract the CID
+  const encodedCid = encodeAbiParameters([{ type: 'string' }], [cid]);
+
   const calldata = encodeFunctionData({
     abi: SpaceRegistryAbi,
     functionName: 'enter',
-    args: [spaceIdBytes16, spaceIdBytes16, EDITS_PUBLISHED, EMPTY_TOPIC, stringToHex(cid), EMPTY_SIGNATURE],
+    args: [spaceIdBytes16, spaceIdBytes16, EDITS_PUBLISHED, EMPTY_TOPIC, encodedCid, EMPTY_SIGNATURE],
   });
 
   return {
