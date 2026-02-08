@@ -24,9 +24,11 @@ function hexToUuid(hex: Hex): string {
 }
 
 it.skip('should create a space and publish an edit', async () => {
-  // IMPORTANT: Replace with your actual private key for testing
-  // You can get your private key using https://www.geobrowser.io/export-wallet
-  const addressPrivateKey = '0xTODO' as `0x${string}`;
+  const privateKey = process.env.PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error('PRIVATE_KEY environment variable is required. Run `pnpm create-private-key` to generate one.');
+  }
+  const addressPrivateKey = privateKey as `0x${string}`;
   const { address } = privateKeyToAccount(addressPrivateKey);
 
   console.log('address', address);
@@ -162,9 +164,14 @@ it.skip('should create a space and publish an edit', async () => {
 }, 60000);
 
 it.skip('should create a DAO space and propose an edit', async () => {
-  // IMPORTANT: Replace with your actual private key for testing
-  // You can get your private key using https://www.geobrowser.io/export-wallet
-  const addressPrivateKey = '0xTODO' as `0x${string}`;
+  const privateKeyEnv = process.env.PRIVATE_KEY;
+  if (!privateKeyEnv) {
+    throw new Error('PRIVATE_KEY environment variable is required. Run `pnpm create-private-key` to generate one.');
+  }
+  if (!privateKeyEnv.startsWith('0x')) {
+    throw new Error('PRIVATE_KEY must be a hex string starting with 0x.');
+  }
+  const addressPrivateKey = privateKeyEnv as `0x${string}`;
   const { address } = privateKeyToAccount(addressPrivateKey);
 
   console.log('address', address);
