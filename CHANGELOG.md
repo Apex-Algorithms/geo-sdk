@@ -1,5 +1,13 @@
 # @geoprotocol/geo-sdk
 
+## 0.7.0
+
+### Minor Changes
+
+- a56c52d: Add `personalSpace.hasSpace()` utility and export `TESTNET_RPC_URL` and `EMPTY_SPACE_ID` constants
+- e9913b5: Update getSmartAccountWalletClient to support TESTNET and set it as default
+- a7c1cb1: Remove `Graph.createSpace` in favor of `personalSpace.createSpace` and `daoSpace.createSpace`
+
 ## 0.6.0
 
 ### Minor Changes
