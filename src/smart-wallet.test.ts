@@ -3,7 +3,7 @@ import { createPublicClient, http } from 'viem';
 import { entryPoint07Address } from 'viem/account-abstraction';
 import { privateKeyToAccount } from 'viem/accounts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getSmartAccountWalletClient } from './smart-wallet.js';
+import { GEO_TESTNET_SAFE_ADDRESSES, getSmartAccountWalletClient } from './smart-wallet.js';
 
 // mock all external dependencies
 vi.mock('permissionless', () => ({
@@ -42,10 +42,10 @@ describe('getSmartAccountWalletClient', () => {
   it('should create a client with the default RPC URL when no RPC URL is provided', async () => {
     await getSmartAccountWalletClient({ privateKey: mockPrivateKey });
 
-    expect(http).toHaveBeenCalledWith('https://rpc-geo-genesis-h0q2s21xx8.t.conduit.xyz');
+    expect(http).toHaveBeenCalledWith('https://rpc-geo-test-zc16z3tcvf.t.conduit.xyz');
     expect(createPublicClient).toHaveBeenCalledWith(
       expect.objectContaining({
-        transport: { mockTransport: true, url: 'https://rpc-geo-genesis-h0q2s21xx8.t.conduit.xyz' },
+        transport: { mockTransport: true, url: 'https://rpc-geo-test-zc16z3tcvf.t.conduit.xyz' },
       }),
     );
   });
@@ -78,6 +78,7 @@ describe('getSmartAccountWalletClient', () => {
           version: '0.7',
         },
         version: '1.4.1',
+        ...GEO_TESTNET_SAFE_ADDRESSES,
       }),
     );
   });

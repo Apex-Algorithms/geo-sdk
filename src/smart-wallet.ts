@@ -16,6 +16,26 @@ const TESTNET_DEFAULT_RPC_URL = 'https://rpc-geo-test-zc16z3tcvf.t.conduit.xyz';
  */
 const DEFAULT_API_KEY = 'pim_KqHm63txxhbCYjdDaWaHqH';
 
+/**
+ * Custom Safe contract addresses for Geo Testnet.
+ *
+ * Safe uses deterministic deployment so the canonical addresses are the same on
+ * every chain. On Geo Mainnet (80451) those canonical addresses exist, so the
+ * permissionless library's defaults work. On Geo Testnet (19411) the canonical
+ * deployer was never run — the Safe contracts were deployed separately and
+ * landed at different addresses. We pass them explicitly to toSafeSmartAccount.
+ *
+ * Source of truth: curator-app packages/curator-utils/src/utils/smart-account-constants.ts
+ */
+export const GEO_TESTNET_SAFE_ADDRESSES = {
+  safeModuleSetupAddress: '0x2dd68b007B46fBe91B9A7c3EDa5A7a1063cB5b47' as Hex,
+  safe4337ModuleAddress: '0x75cf11467937ce3F2f357CE24ffc3DBF8fD5c226' as Hex,
+  safeProxyFactoryAddress: '0xd9d2Ba03a7754250FDD71333F444636471CACBC4' as Hex,
+  safeSingletonAddress: '0x639245e8476E03e789a244f279b5843b9633b2E7' as Hex,
+  multiSendAddress: '0x7B21BBDBdE8D01Df591fdc2dc0bE9956Dde1e16C' as Hex,
+  multiSendCallOnlyAddress: '0x32228dDEA8b9A2bd7f2d71A958fF241D79ca5eEC' as Hex,
+} as const;
+
 type GetSmartAccountWalletClientParams = {
   privateKey: Hex;
   rpcUrl?: string;
@@ -62,9 +82,9 @@ const createChain = (network: 'TESTNET' | 'MAINNET', rpcUrl: string) => {
  */
 export const getSmartAccountWalletClient = async ({
   privateKey,
-  rpcUrl = MAINNET_DEFAULT_RPC_URL,
+  rpcUrl = TESTNET_DEFAULT_RPC_URL,
 }: GetSmartAccountWalletClientParams): Promise<GeoSmartAccount> => {
-  const chain = createChain('MAINNET', rpcUrl);
+  const chain = createChain('TESTNET', rpcUrl);
   const transport = http(rpcUrl);
 
   const publicClient = createPublicClient({
@@ -81,9 +101,10 @@ export const getSmartAccountWalletClient = async ({
       version: '0.7',
     },
     version: '1.4.1',
+    ...GEO_TESTNET_SAFE_ADDRESSES,
   });
 
-  const bundlerTransport = http(`https://api.pimlico.io/v2/80451/rpc?apikey=${DEFAULT_API_KEY}`);
+  const bundlerTransport = http(`https://api.pimlico.io/v2/19411/rpc?apikey=${DEFAULT_API_KEY}`);
   const paymasterClient = createPimlicoClient({
     transport: bundlerTransport,
     chain,
