@@ -1,5 +1,16 @@
 # @geoprotocol/geo-sdk
 
+## 0.11.0
+
+### Minor Changes
+
+- 7c96e9d: Add daoSpace.voteProposal for voting on DAO proposals
+
+### Patch Changes
+
+- e4f8f7b: fix: use correct `removeEditor` function name instead of `removeMember` in getRemoveEditorArguments
+- 7faad31: Update entities and knowledge graphs link and remove pluralism link from README
+
 ## 0.10.1
 
 ### Patch Changes
