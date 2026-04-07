@@ -27,9 +27,7 @@ jobs:
         run: pnpm build
 
       - name: Publish to npm
-        run: pnpm changeset publish
-        env:
-          NPM_CONFIG_PROVENANCE: true
+        run: npm publish --provenance --access public
 
       - name: Push tags
         run: git push --follow-tags
