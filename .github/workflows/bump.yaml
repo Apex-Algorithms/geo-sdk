@@ -6,11 +6,9 @@ on:
 jobs:
   bump:
     name: Bump Version
-    if: github.actor == 'nikgraf' || github.actor == 'yanivtal'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -26,7 +24,7 @@ jobs:
       - name: Bump versions
         run: pnpm bump
 
-      - name: Create Pull Request
+      - name: Push version branch
         run: |
           VERSION=$(node -p "require('./package.json').version")
           BRANCH="changeset-release/v${VERSION}"
@@ -38,10 +36,6 @@ jobs:
           git commit -m "Version Packages v${VERSION}"
           git push origin "$BRANCH"
 
-          gh pr create \
-            --title "Version Packages v${VERSION}" \
-            --body "This PR was created by the bump version workflow. Merge it and then run the **Publish** workflow to release to npm." \
-            --base main \
-            --head "$BRANCH"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "Branch **${BRANCH}** pushed. Create a PR:" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://github.com/${{ github.repository }}/compare/main...${BRANCH}" >> "$GITHUB_STEP_SUMMARY"
