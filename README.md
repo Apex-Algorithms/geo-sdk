@@ -12,7 +12,7 @@ npm install @geoprotocol/geo-sdk
 
 ### Data flow
 
-Data in The Graph lives both offchain and onchain. This data is written to IPFS, and the resulting content identitifier is then posted onchain before being read by the indexing stack. After the indexer finishes processing the data it's exposed by the API.
+Data in The Graph lives both offchain and onchain. This data is written to IPFS, and the resulting content identifier is then posted onchain before being read by the indexing stack. After the indexer finishes processing the data it's exposed by the API.
 ![CleanShot 2025-01-22 at 10 51 23@2x](https://github.com/user-attachments/assets/f0cee8e0-43f9-4663-a2e7-54de6d962115)
 
 ### Spaces
@@ -59,7 +59,7 @@ import { Graph } from '@geoprotocol/geo-sdk';
 // create a property
 const propertyResult = Graph.createProperty({
   name: 'name of the property',
-  dataType: 'TEXT', // BOOLEAN | INT64 | FLOAT64 | DECIMAL | TEXT | BYTES | DATE | TIME | DATETIME | SCHEDULE | POINT | EMBEDDING | RELATION
+  dataType: 'TEXT', // BOOLEAN | INTEGER | FLOAT | DECIMAL | TEXT | BYTES | DATE | TIME | DATETIME | SCHEDULE | POINT | EMBEDDING | RELATION
 });
 
 // create a type
@@ -114,9 +114,16 @@ const { id: personId, ops: createPersonOps } = Graph.createEntity({
       value: "Hello",
       language: Id("dad6e52a5e944e559411cfe3a3c3ea64"), // optional
     },
-    // Number value (with optional unit)
+    // Number value — integer (with optional unit)
     {
-      property: someNumberPropertyId,
+      property: someIntPropertyId,
+      type: "integer",
+      value: 42,
+      unit: Id("016c9b1cd8a84e4d9e844e40878bb235"), // optional
+    },
+    // Number value — float (with optional unit)
+    {
+      property: someFloatPropertyId,
       type: "float",
       value: 42.5,
       unit: Id("016c9b1cd8a84e4d9e844e40878bb235"), // optional
@@ -124,7 +131,7 @@ const { id: personId, ops: createPersonOps } = Graph.createEntity({
     // Boolean value
     {
       property: someBooleanPropertyId,
-      type: "bool",
+      type: "boolean",
       value: true,
     },
     // Point value (with optional altitude)
@@ -193,7 +200,7 @@ const { id: personTypeId, ops: createPersonTypeOps } = Graph.createType({
 });
 ops.push(...createPersonTypeOps);
 
-// create an restaurant cover image
+// create a restaurant cover image
 const { id: restaurantCoverId, ops: createRestaurantCoverOps } =
   await Graph.createImage({
     url: "https://example.com/image.png",
@@ -201,7 +208,7 @@ const { id: restaurantCoverId, ops: createRestaurantCoverOps } =
 ops.push(...createRestaurantCoverOps);
 
 // create a restaurant entity with a website property
-const restaurantTypeId = "A9QizqoXSqjfPUBjLoPJa2";
+const restaurantTypeId = "a1b2c3d4e5f647889012345678abcdef";
 const { id: restaurantId, ops: createRestaurantOps } = Graph.createEntity({
   name: "Yum Yum",
   description: "A restaurant serving fusion cuisine",
@@ -232,7 +239,7 @@ const { id: personId, ops: createPersonOps } = Graph.createEntity({
   values: [
     {
       property: agePropertyId,
-      type: "float",
+      type: "integer",
       value: 42,
     },
   ],
@@ -243,6 +250,106 @@ const { id: personId, ops: createPersonOps } = Graph.createEntity({
   },
 });
 ops.push(...createPersonOps);
+```
+
+### Updating entities
+
+Update an entity's name, description, and property values. Also supports unsetting properties.
+
+```ts
+import { Graph } from "@geoprotocol/geo-sdk";
+
+// Update values
+const { ops: updateOps } = Graph.updateEntity({
+  id: entityId,
+  name: "Updated Name",
+  description: "Updated description",
+  values: [
+    {
+      property: agePropertyId,
+      type: "integer",
+      value: 43,
+    },
+  ],
+});
+
+// Unset property values
+const { ops: unsetOps } = Graph.updateEntity({
+  id: entityId,
+  unset: [
+    { property: propertyId },                                  // unset all languages
+    { property: propertyId2, language: { type: "all" } },      // explicit all languages
+  ],
+});
+```
+
+### Deleting entities
+
+Delete an entity by removing all its values and relations in a specific space. This is an async operation that queries the API to discover what to delete.
+
+```ts
+import { Graph } from "@geoprotocol/geo-sdk";
+
+const { ops: deleteOps } = await Graph.deleteEntity({
+  id: entityId,
+  spaceId: spaceId,
+  network: "TESTNET", // optional, defaults to "TESTNET"
+});
+```
+
+> **Note:** `deleteEntity` queries the API to discover the entity's properties and relations, then generates ops to unset all values and delete all relations. The entity itself transitions to an empty state rather than being permanently destroyed.
+
+### Relations
+
+Relations describe edges between entities in the knowledge graph. Each relation is itself an entity, which means relations can have their own properties (e.g., a "Team Member" relation could have a "joined date" property).
+
+```ts
+import { Graph, Position } from "@geoprotocol/geo-sdk";
+
+// Create a relation
+const { id: relationId, ops: createRelOps } = Graph.createRelation({
+  fromEntity: personId,
+  toEntity: restaurantId,
+  type: likesPropertyId,                // the relation type property
+  position: Position.generateBetween(), // optional ordering
+});
+
+// Update a relation (change position)
+const { ops: updateRelOps } = Graph.updateRelation({
+  id: relationId,
+  position: Position.generateBetween(posA, posB),
+});
+
+// Delete a relation
+const { ops: deleteRelOps } = Graph.deleteRelation({
+  id: relationId,
+});
+```
+
+### Positions
+
+The `Position` module provides fractional indexing for ordering entities, relations, and other ordered items without renumbering.
+
+```ts
+import { Position } from "@geoprotocol/geo-sdk";
+
+// Generate a position (for first item)
+const pos1 = Position.generate();
+
+// Generate a position between two existing positions
+const between = Position.generateBetween(pos1, pos2);
+
+// Generate at the start (before first item)
+const first = Position.generateBetween(null, pos1);
+
+// Generate at the end (after last item)
+const last = Position.generateBetween(pos1, null);
+
+// Compare positions
+const result = Position.compare(posA, posB); // -1, 0, or 1
+
+// Sort an array of positions
+const sorted = Position.sort([pos3, pos1, pos2]);
 ```
 
 ### Publishing an edit onchain using your Geo Account
@@ -287,6 +394,64 @@ const txHash = await walletClient.sendTransaction({
   to,
   data: calldata,
 });
+```
+
+#### Publishing to a personal space
+
+```ts
+import { personalSpace } from "@geoprotocol/geo-sdk";
+
+const { cid, editId, to, calldata } = await personalSpace.publishEdit({
+  name: "My Edit",
+  spaceId,       // your personal space ID (dashless hex UUID)
+  ops,           // array of Op from Graph.* functions
+  author: spaceId, // your personal space ID (same as spaceId for personal spaces)
+  network: "TESTNET",
+});
+
+const txHash = await walletClient.sendTransaction({ to, data: calldata });
+```
+
+> **Important:** The `author` field must be a **personal space ID** (dashless hex UUID), not a wallet address or entity ID. For personal spaces, this is the same as `spaceId`. Verified from SDK source: `personal-space/types.ts` defines author as `/** The author's personal space ID. */`.
+
+### DAO Spaces
+
+DAO spaces use governance (voting) for publishing changes. The SDK provides a `daoSpace` module for proposing edits and managing membership.
+
+#### Proposing an edit to a DAO space
+
+```ts
+import { daoSpace, Graph } from "@geoprotocol/geo-sdk";
+
+const { ops } = Graph.createEntity({ name: "New Entity" });
+
+const { editId, cid, to, calldata, proposalId } = await daoSpace.proposeEdit({
+  name: "Add new entity",
+  ops,
+  author: callerSpaceId,                        // your personal space ID (as `0x${string}`)
+  daoSpaceAddress: "0xDAOSpaceContractAddress",  // the DAO space contract address
+  callerSpaceId: "0xCallerBytes16SpaceId",       // your personal space ID (bytes16 hex)
+  daoSpaceId: "0xDAOBytes16SpaceId",             // the DAO space ID (bytes16 hex)
+  network: "TESTNET",
+});
+
+await walletClient.sendTransaction({ to, data: calldata });
+```
+
+> **Note:** `callerSpaceId` and `daoSpaceId` must be `0x`-prefixed bytes16 hex strings (e.g., `0x` + 32 hex chars). `author` is your personal space ID, also `0x`-prefixed.
+
+#### Requesting membership in a DAO space
+
+```ts
+import { daoSpace } from "@geoprotocol/geo-sdk";
+
+const { to, calldata, proposalId } = daoSpace.proposeRequestMembership({
+  requesterSpaceId: "0xRequesterPersonalSpaceId",
+  daoSpaceAddress: "0xDAOSpaceContractAddress",
+  daoSpaceId: "0xDAOBytes16SpaceId",
+});
+
+await walletClient.sendTransaction({ to, data: calldata });
 ```
 
 ## Full Publishing Flow with Smart Account
